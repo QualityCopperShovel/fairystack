@@ -216,6 +216,7 @@ public final class WorkspaceWindows: NSObject, NSWindowDelegate, WKNavigationDel
         controller.addScriptMessageHandler(WeakReplyMessageHandler(self), contentWorld: .page, name: "fairystackMicrophone")
         controller.addScriptMessageHandler(WeakReplyMessageHandler(self), contentWorld: .page, name: "fairystackPair")
         controller.addScriptMessageHandler(WeakReplyMessageHandler(self), contentWorld: .page, name: "fairystackConnect")
+        controller.addScriptMessageHandler(WeakReplyMessageHandler(self), contentWorld: .page, name: "fairystackStacks")
         return controller
     }()
 
@@ -518,6 +519,30 @@ public final class WorkspaceWindows: NSObject, NSWindowDelegate, WKNavigationDel
 
     public func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage,
                                       replyHandler: @escaping (Any?, String?) -> Void) {
+        if message.name == "fairystackStacks" {
+            guard let view = message.webView as? WorkspaceWebView, !view.isAuxiliary,
+                  let origin = view.workspaceOrigin, let url = view.url,
+                  message.frameInfo.isMainFrame, message.frameInfo.webView === view,
+                  WorkspaceAddress.sameOrigin(url, origin),
+                  WorkspaceAddress.sameOrigin(message.frameInfo.securityOrigin, origin),
+                  let body = message.body as? [String: Any], let action = body["action"] as? String
+            else { replyHandler(nil, "Servers are only available to this stack’s main window."); return }
+            switch action {
+            case "list" where body.count == 1:
+                replyHandler(["servers": store.entries.map { ["origin": $0.url.absoluteString, "label": $0.name] }], nil)
+            case "merge" where body.count == 2:
+                guard let rows = body["servers"] as? [[String: String]], store.merge(rows)
+                else { replyHandler(nil, "Invalid saved servers."); return }
+                replyHandler(["state": "completed"], nil)
+            case "open" where body.count == 2:
+                guard let text = body["origin"] as? String, let target = WorkspaceAddress.parse(text),
+                      store.entries.contains(where: { $0.url == target })
+                else { replyHandler(nil, "Save this server before opening it."); return }
+                openStack(target); replyHandler(["state": "completed"], nil)
+            default: replyHandler(nil, "Invalid server request.")
+            }
+            return
+        }
         if message.name == "fairystackDiagnostics" {
             guard let view = message.webView as? WorkspaceWebView, !view.isAuxiliary,
                   let origin = view.workspaceOrigin, let url = view.url,

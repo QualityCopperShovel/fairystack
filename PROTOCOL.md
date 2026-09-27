@@ -65,3 +65,14 @@ words to its own composer and WebKit acknowledges capture stopped. The native
 handoff deadline is 165 seconds, with a 170-second web caller deadline. Errors
 are terminal and recorded by the existing capture-failure diagnostics. No voice
 content, account token or stack credentials cross this native coordination path.
+
+
+## Saved servers (Mac 1.14+)
+
+The main-frame, same-origin `fairystackStacks` reply bridge reads the same
+SavedStacks store as the menu bar. `{action:"list"}` returns `{servers:[{origin,label}]}`;
+`{action:"merge",servers:[...]}` imports validated bookmarks without changing
+selection, existing names, permissions or credentials. `{action:"open",origin}`
+focuses an existing saved server window or opens it. Every web bridge call has
+a deadline; only bookmarks cross the bridge. The web UI saves addresses through
+its authenticated `/api/account/servers` endpoint.

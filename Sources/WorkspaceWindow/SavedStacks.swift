@@ -71,6 +71,19 @@ final class SavedStacks {
         if !entries.contains(where: { $0.url == url }) { entries.append(SavedStack(url: url, name: Self.defaultName(url))) }
         select(url); save()
     }
+    /// Import account bookmarks without changing the selected window or its credentials.
+    func merge(_ rows: [[String: String]]) -> Bool {
+        guard rows.count <= 128 else { return false }
+        var additions: [SavedStack] = []
+        for row in rows {
+            guard row.count == 2, let text = row["origin"], let candidate = URL(string: text),
+                  let url = Self.permanent(candidate), let label = row["label"], let name = Self.name(label)
+            else { return false }
+            additions.append(SavedStack(url: url, name: name))
+        }
+        for entry in additions where !entries.contains(where: { $0.url == entry.url }) { entries.append(entry) }
+        save(); return true
+    }
     func select(_ url: URL) {
         guard entries.contains(where: { $0.url == url }) else { return }
         defaults.set(url.absoluteString, forKey: Self.selectedKey)

@@ -383,6 +383,13 @@ final class ApprovalPopupTests: XCTestCase {
             for window in NSApp.windows where window.contentView is WorkspaceWebView { window.close() }
         }
         js(parent, "const range=document.createRange(); range.selectNodeContents(evidence); getSelection().removeAllRanges(); getSelection().addRange(range); void 0")
+        js(parent, "window.stackReply=null; webkit.messageHandlers.fairystackStacks.postMessage({action:'list'}).then(value=>window.stackReply=value); void 0")
+        spin({ self.js(parent, "window.stackReply !== null") as? Bool == true })
+        let reply = js(parent, "window.stackReply") as? [String: Any]
+        XCTAssertTrue((reply?["servers"] as? [[String: String]])?.contains(where: { $0["origin"] == custom.absoluteString }) == true)
+        js(parent, "window.stackReply=null; webkit.messageHandlers.fairystackStacks.postMessage({action:'open',origin:'https://you.fairystack.com'}).then(value=>window.stackReply=value); void 0")
+        spin({ self.js(parent, "window.stackReply !== null") as? Bool == true })
+        XCTAssertEqual(SavedStacks(defaults: defaults).windows.count, 1, "switching focuses the existing window")
         let actions = ["server.click()", "window.open('https://multi.fairystack.com/?session=fixture', '_blank')", "location.href='https://workspace.example:8443/workspace/'"]
         for (index, action) in actions.enumerated() {
             js(parent, action + "; void 0")
@@ -524,5 +531,25 @@ extension ApprovalPopupTests {
         js(connect, "window.pairingResult='pending'; webkit.messageHandlers.fairystackConnect.postMessage({token:'fs_mac_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'}).then(()=>window.pairingResult='allowed',()=>window.pairingResult='denied'); void 0")
         spin({ self.js(connect, "window.pairingResult") as? String == "denied" })
         XCTAssertEqual(requests, 0, "A popup cannot pair until its document is the owned Connect page")
+    }
+}
+
+final class AccountStackImportTests: XCTestCase {
+    func testImportPreservesSelectionNamesAndRejectsPartialInvalidData() {
+        let suite = "stack-import-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = SavedStacks(defaults: defaults)
+        store.add(origin)
+        XCTAssertTrue(store.rename(origin, to: "My workspace"))
+        let finance = "https://finance.example.test:9443"
+        XCTAssertTrue(store.merge([["origin": finance, "label": "Finance"], ["origin": origin.absoluteString, "label": "Remote name"]]))
+        XCTAssertEqual(store.selected, origin)
+        XCTAssertEqual(store.entries.first?.name, "My workspace")
+        XCTAssertEqual(store.entries.last?.name, "Finance")
+        let before = store.entries
+        XCTAssertFalse(store.merge([["origin": "https://new.example.test", "label": "New"], ["origin": "http://bad.test", "label": "Bad"]]))
+        XCTAssertEqual(store.entries, before)
+        XCTAssertEqual(SavedStacks(defaults: defaults).entries, before)
     }
 }

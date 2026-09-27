@@ -1,4 +1,4 @@
-# FairyStack for Mac 1.13.1
+# FairyStack for Mac 1.14.0
 
 Version 1.10 records content-free crash and capture evidence. The signed-in
 workspace relays macOS crash type, app image UUID/offsets, WebKit process exits,
@@ -74,8 +74,9 @@ Every install starts with one stack, **Multiplayer** (https://multi.fairystack.c
 shared stack whose members all see every session. It is added once without changing an
 existing selection; Forget removes it for good. **Add stack by address** is a recovery option. Existing single-address installations
 migrate automatically; an old command-paired origin is a one-time fallback when there
-is no saved address. Saved stacks are local bookmarks, not a cross-instance account
-directory. Opened straight from the disk image, the app offers to move itself to
+is no saved address. The in-app Servers list reads the same saved bookmarks as the menu bar and
+syncs them with the signed-in account. Bookmarks never transfer credentials or
+link identities; linked accounts share their saved addresses across servers. Opened straight from the disk image, the app offers to move itself to
 Applications so it can update. The Terminal installer passes the address directly.
 
 Pair directly in the app’s Connect window: Connect this Mac saves the connection, then the window waits for the Mac’s verified check-in. No code copying or menu-bar step is required. The legacy menu pairing flow remains available. The app uses its own Keychain service and starts commands in your Mac user’s home folder. Commands use your account’s file access; macOS permissions still apply.
