@@ -1,4 +1,4 @@
-# FairyStack for Mac 1.13.0
+# FairyStack for Mac 1.13.1
 
 Version 1.10 records content-free crash and capture evidence. The signed-in
 workspace relays macOS crash type, app image UUID/offsets, WebKit process exits,
@@ -52,7 +52,7 @@ in-memory coordinator.
 ## FairyStack window
 
 Fairy menu-bar icon → Open FairyStack window shows your FairyStack (https origin only) in a
-WebKit window with its own Dock icon while open. Other sites open in your default browser. Drag a conversation image to Finder to save the full-resolution original:
+WebKit window with its own Dock icon while open. The Servers menu opens each server in another native FairyStack window, keeping the source draft and each window’s sign-in, microphone and restoration bound to its own server. Saved custom server addresses also stay native; ordinary websites open in your default browser. Drag a conversation image to Finder to save the full-resolution original:
 the page announces the hovered image with a short-lived signed link, and the app
 downloads it through a file promise (two-minute limit; failures show an alert).
 A plain click still opens the image viewer. Downloads go to ~/Downloads.

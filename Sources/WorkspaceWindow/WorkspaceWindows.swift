@@ -482,6 +482,31 @@ public final class WorkspaceWindows: NSObject, NSWindowDelegate, WKNavigationDel
         return (view as? WorkspaceWebView)?.isAuxiliary == true && host == "voice-feed.aisloppy.com"
     }
 
+    // Server entry links are workspaces, not websites. Keep the destination's
+    // origin and native capabilities independent of the originating window.
+    func serverOrigin(_ url: URL) -> URL? {
+        guard var parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              ["", "/", "/workspace", "/workspace/"].contains(parts.path),
+              !(parts.queryItems ?? []).contains(where: { ["browser", "focused"].contains($0.name) && $0.value == "1" }) else { return nil }
+        parts.path = ""; parts.query = nil; parts.fragment = nil
+        guard let address = parts.url, let target = SavedStacks.permanent(address) else { return nil }
+        let hosted = (target.port == nil && target.host?.range(of: "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.fairystack\\.com$", options: .regularExpression) != nil)
+        return hosted || store.entries.contains(where: { $0.url == target }) ? target : nil
+    }
+
+    @discardableResult
+    private func openServerLink(_ url: URL, from action: WKNavigationAction, in webView: WKWebView) -> Bool {
+        guard let parent = webView as? WorkspaceWebView, !parent.isAuxiliary,
+              let origin = parent.workspaceOrigin, let page = parent.url,
+              WorkspaceAddress.sameOrigin(page, origin), action.sourceFrame.isMainFrame,
+              WorkspaceAddress.sameOrigin(action.sourceFrame.securityOrigin, origin),
+              action.targetFrame == nil || (action.targetFrame?.isMainFrame == true && !WorkspaceAddress.sameOrigin(url, origin)),
+              let target = serverOrigin(url) else { return false }
+        register(target)
+        open(URLRequest(url: url, timeoutInterval: 30), origin: target, configuration: nil)
+        return true
+    }
+
     public func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.name == Self.dragMessage, let view = message.webView as? WorkspaceWebView,
               !view.isAuxiliary, let origin = view.workspaceOrigin, message.frameInfo.isMainFrame,
@@ -558,6 +583,7 @@ public final class WorkspaceWindows: NSObject, NSWindowDelegate, WKNavigationDel
             guard let origin = (webView as? WorkspaceWebView)?.workspaceOrigin, WorkspaceAddress.sameOrigin(url, origin) else { return decisionHandler(.cancel) }
             return decisionHandler(.download)
         }
+        if openServerLink(url, from: action, in: webView) { return decisionHandler(.cancel) }
         let approvalPopup = action.targetFrame == nil && WorkspaceAddress.sameOrigin(url, URL(string: "https://voice-feed.aisloppy.com")!)
         if approvalPopup || action.targetFrame?.isMainFrame == false || ["about", "blob", "data"].contains(url.scheme ?? "") || allowedInWindow(url, view: webView) {
             return decisionHandler(.allow)
@@ -602,6 +628,7 @@ public final class WorkspaceWindows: NSObject, NSWindowDelegate, WKNavigationDel
 
     public func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         guard let url = action.request.url else { return nil }
+        if openServerLink(url, from: action, in: webView) { return nil }
         guard let parent = webView as? WorkspaceWebView, let origin = parent.workspaceOrigin else { return nil }
         // window.open('about:blank') is a bootstrap, followed asynchronously by
         // the verified approval URL. Returning nil loses the live WindowProxy.

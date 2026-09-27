@@ -11,7 +11,7 @@ import unittest
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-DIGEST = 'ad6cb3364aa65688b3d04f7a2ca7800eaee8e3e3835174390a11ebd2990800c6'
+DIGEST = 'ed59110686461e7760f8e7ad9cc7cc4bcf28403f64feae6d8e491b8392d75fd1'
 
 
 class InstallerTests(unittest.TestCase):
@@ -54,7 +54,7 @@ class InstallerTests(unittest.TestCase):
                 assert Path(args[-1]).is_dir()
             elif cmd=='spctl': assert args[:3]==['--assess','--type','execute']
             elif cmd=='open': pass
-            elif cmd=='defaults': print(os.environ.get('INSTALLED_VERSION','1.13.0'))
+            elif cmd=='defaults': print(os.environ.get('INSTALLED_VERSION','1.13.1'))
             elif cmd=='pgrep': sys.exit(0 if os.environ.get('RUNNING') else 1)
             else: sys.exit(5)
         '''))
@@ -150,7 +150,7 @@ class InstallerTests(unittest.TestCase):
         result=self.run_installer(INSTALLED_VERSION='1.0.1')
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertFalse(sentinel.exists());self.assertTrue((self.target/'Contents/MacOS/FairyStackCompanion').exists())
-        self.assertIn('Updated FairyStack 1.0.1 to 1.13.0',result.stdout);self.assert_clean()
+        self.assertIn('Updated FairyStack 1.0.1 to 1.13.1',result.stdout);self.assert_clean()
         calls=(self.root/'calls').read_text()
         self.assertEqual(calls.count('codesign '),2,'both the old and the replacement app are verified')
         self.assertIn("'--fairystack-origin', 'https://customer.fairystack.com'",calls)
@@ -187,14 +187,14 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertFalse(self.legacy.exists(),'the Companion-era bundle is replaced, not duplicated')
         self.assertTrue((self.target/'Contents/MacOS/FairyStackCompanion').exists())
-        self.assertIn('Updated FairyStack 1.1.1 to 1.13.0',result.stdout);self.assert_clean()
+        self.assertIn('Updated FairyStack 1.1.1 to 1.13.1',result.stdout);self.assert_clean()
         calls=(self.root/'calls').read_text()
-        self.assertIn('FairyStack-1.13.0.zip',calls)
+        self.assertIn('FairyStack-1.13.1.zip',calls)
         self.assertIn(str(self.target),calls.splitlines()[-2],'opens the renamed app')
 
     def test_current_legacy_bundle_is_renamed_without_download(self):
         sentinel=self.installed_legacy()
-        result=self.run_installer(INSTALLED_VERSION='1.13.0')
+        result=self.run_installer(INSTALLED_VERSION='1.13.1')
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertFalse(self.legacy.exists());self.assertEqual((self.target/'old-build').read_text(),'1.1.1')
         self.assertNotIn('curl ',(self.root/'calls').read_text())
