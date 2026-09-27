@@ -456,11 +456,19 @@ final class CrossOriginMicrophoneTests: XCTestCase {
         for view in views { _ = js(view, "await VoiceFeedClient.releaseForNativeTransfer(); return true;") }
         probe.legacy = false
         var claimed = false
+        windows.microphone.claimIfActive(finance) { owned, error in
+            XCTAssertFalse(owned); XCTAssertNil(error); claimed = true
+        }
+        spin { claimed }; XCTAssertNil(windows.microphone.owner)
+        claimed = false
         windows.microphone.claim(finance) { XCTAssertNil($0); claimed = true }
         spin { claimed }
         XCTAssertEqual(js(finance, "return await begin();") as? String, "live")
         claimed = false
-        windows.microphone.claim(jessald) { XCTAssertNil($0); claimed = true }
+        spin { finance.microphoneCaptureState != .none }
+        windows.microphone.claimIfActive(jessald) { owned, error in
+            XCTAssertTrue(owned); XCTAssertNil(error); claimed = true
+        }
         spin { claimed }
         XCTAssertEqual(js(finance, "return track.readyState + ':' + audio.state;") as? String, "ended:closed")
         XCTAssertTrue(windows.microphone.owner === jessald)
@@ -488,6 +496,11 @@ final class CrossOriginMicrophoneTests: XCTestCase {
         var captureStopped = false
         jessald.setMicrophoneCaptureState(.none) { captureStopped = true }
         spin { captureStopped }
+        var idleChecked = false
+        windows.microphone.claimIfActive(finance) { owned, error in
+            XCTAssertFalse(owned); XCTAssertNil(error); idleChecked = true
+        }
+        spin { idleChecked }; XCTAssertTrue(windows.microphone.owner === jessald)
         _ = js(jessald, "window.FairyStackReloadGuard={busy:()=>true}; return true;")
         updateReady = nil
         windows.canRestartForUpdate { updateReady = $0 }

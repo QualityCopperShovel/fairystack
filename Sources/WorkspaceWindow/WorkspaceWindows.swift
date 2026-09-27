@@ -521,11 +521,19 @@ public final class WorkspaceWindows: NSObject, NSWindowDelegate, WKNavigationDel
                   message.frameInfo.isMainFrame, message.frameInfo.webView === view,
                   WorkspaceAddress.sameOrigin(url, origin),
                   WorkspaceAddress.sameOrigin(message.frameInfo.securityOrigin, origin),
-                  let body = message.body as? [String: String], body == ["action": "claim"]
+                  let body = message.body as? [String: String], body.count == 1,
+                  let action = body["action"], ["claim", "claim-if-active"].contains(action)
             else { replyHandler(nil, "Microphone ownership is only available to this saved stack’s main window."); return }
-            microphone.claim(view) { error in
-                if let error { replyHandler(nil, error) }
-                else { replyHandler(["state": "owned"], nil) }
+            if action == "claim-if-active" {
+                microphone.claimIfActive(view) { owned, error in
+                    if let error { replyHandler(nil, error) }
+                    else { replyHandler(["state": owned ? "owned" : "idle"], nil) }
+                }
+            } else {
+                microphone.claim(view) { error in
+                    if let error { replyHandler(nil, error) }
+                    else { replyHandler(["state": "owned"], nil) }
+                }
             }
             return
         }

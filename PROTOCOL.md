@@ -52,3 +52,16 @@ retries a claimed command; inspect the retained receipt and local files first.
 Revocation or cancellation takes effect locally on the next bounded request, not
 instantaneously. An app update also stops active commands.
 
+
+
+## Local microphone ownership (Mac 1.13+)
+
+Saved stack main frames use the reply-capable `fairystackMicrophone` bridge with
+one field, `action`: `claim` for an explicit microphone start, or
+`claim-if-active` to follow a foreground composer. Conditional claims reply
+`{state:"idle"}` when no other window in this app is capturing; successful
+claims reply `{state:"owned"}` only after the prior window drains its queued
+words to its own composer and WebKit acknowledges capture stopped. The native
+handoff deadline is 165 seconds, with a 170-second web caller deadline. Errors
+are terminal and recorded by the existing capture-failure diagnostics. No voice
+content, account token or stack credentials cross this native coordination path.

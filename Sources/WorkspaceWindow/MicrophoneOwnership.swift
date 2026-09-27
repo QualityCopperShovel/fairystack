@@ -6,13 +6,23 @@ import WebKit
 final class MicrophoneOwnership {
     private(set) weak var owner: WorkspaceWebView?
     private var transfer: UUID?
-    var deadline: TimeInterval = 65
+    // The shared recorder owns a 150-second queue drain; leave room for WebKit's hardware acknowledgement.
+    var deadline: TimeInterval = 165
     var isTransferring: Bool { transfer != nil }
 
     func admitPermission(_ view: WorkspaceWebView) -> Bool {
         guard transfer == nil, owner == nil || owner === view else { return false }
         owner = view
         return true
+    }
+
+    // Composer focus may move an existing recording, never turn on an idle Mac.
+    // Server preferences cannot answer this across different stack origins.
+    func claimIfActive(_ view: WorkspaceWebView, completion: @escaping (Bool, String?) -> Void) {
+        guard let previous = owner, previous !== view, previous.microphoneCaptureState != .none else {
+            completion(false, nil); return
+        }
+        claim(view) { error in completion(error == nil, error) }
     }
 
     func claim(_ view: WorkspaceWebView, completion: @escaping (String?) -> Void) {

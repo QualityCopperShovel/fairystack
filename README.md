@@ -1,4 +1,4 @@
-# FairyStack for Mac 1.12.1
+# FairyStack for Mac 1.13.0
 
 Version 1.10 records content-free crash and capture evidence. The signed-in
 workspace relays macOS crash type, app image UUID/offsets, WebKit process exits,
@@ -36,6 +36,18 @@ Behavioral process tests use
 `python3 -m unittest discover -s tests -v`. The checked-in Info.plist and icon
 source define the signed app bundle. Download and pairing links are documented
 in FairyStack's live agent guide, FairyStack for Mac section.
+
+## Microphone focus across stacks
+
+Clicking a conversation composer or returning to a window whose composer is
+focused moves an already-running microphone between saved FairyStack stacks.
+The Mac coordinates ownership locally across those windows; one stack's server
+cannot observe another stack's recording. The old window finishes its recorded
+words in its original composer before the new recorder starts. Idle microphones
+stay off, and an explicit Stop is respected. Transfer has a 165-second deadline
+that includes the recorder's 150-second drain. This applies to windows within
+one FairyStack app process; separately launched app processes do not share this
+in-memory coordinator.
 
 ## FairyStack window
 
