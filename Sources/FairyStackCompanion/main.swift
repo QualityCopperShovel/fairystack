@@ -2,7 +2,7 @@ import AppKit
 import ServiceManagement
 import WorkspaceWindow
 
-let appVersion = "1.14.0"
+let appVersion = "1.14.1"
 // Builds before 1.2 used legacyBundleName. Their updaters pin the bundle ID and executable name,
 // so only the folder name changes; a legacy install moves itself once on first launch.
 let appBundleName = "FairyStack.app"
@@ -200,6 +200,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     @objc private func quit() { commands.stop(); NSApp.terminate(nil) }
 }
+TextInputPolicy.install()
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate
