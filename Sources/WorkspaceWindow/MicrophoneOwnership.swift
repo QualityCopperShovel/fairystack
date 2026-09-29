@@ -43,16 +43,22 @@ final class MicrophoneOwnership {
         }
         let timeout = DispatchWorkItem { finish("Microphone transfer timed out while finishing the other window’s recording. No new recording was started. Retry from the microphone.") }
         DispatchQueue.main.asyncAfter(deadline: .now() + deadline, execute: timeout)
+        // Current pages park their recording (lease, queued words, destination) and
+        // release only the hardware; older pages finish and stop the whole recording.
         previous.callAsyncJavaScript("""
-            if (typeof window.VoiceFeedClient?.releaseForNativeTransfer !== 'function')
+            const client = window.VoiceFeedClient;
+            if (typeof client?.standbyForNativeTransfer === 'function') { await client.standbyForNativeTransfer(); return true; }
+            if (typeof client?.releaseForNativeTransfer !== 'function')
                 throw new Error('Reload the other FairyStack window before transferring its microphone.');
-            await window.VoiceFeedClient.releaseForNativeTransfer();
+            await client.releaseForNativeTransfer();
             return true;
             """, arguments: [:], in: nil, in: .page) { [weak self, weak previous] result in
             guard let self, self.transfer == id else { return }
             switch result {
             case .failure(let error):
-                timeout.cancel(); finish("Could not finish the other window’s microphone: \(error.localizedDescription)")
+                // WebKit's localizedDescription is only "A JavaScript exception occurred".
+                let message = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String ?? error.localizedDescription
+                timeout.cancel(); finish("Could not finish the other window’s microphone: \(message)")
             case .success(let value):
                 guard value as? Bool == true, let previous else {
                     timeout.cancel(); finish("The previous microphone window disappeared before acknowledging its recording stopped."); return
