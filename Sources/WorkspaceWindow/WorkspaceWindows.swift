@@ -503,7 +503,7 @@ public final class WorkspaceWindows: NSObject, NSWindowDelegate, WKNavigationDel
               WorkspaceAddress.sameOrigin(action.sourceFrame.securityOrigin, origin),
               action.targetFrame == nil || (action.targetFrame?.isMainFrame == true && !WorkspaceAddress.sameOrigin(url, origin)),
               let target = serverOrigin(url) else { return false }
-        register(target)
+        // Opening another person's server is a visit, not a saved bookmark.
         open(URLRequest(url: url, timeoutInterval: 30), origin: target, configuration: nil)
         return true
     }

@@ -71,7 +71,7 @@ final class SavedStacks {
         if !entries.contains(where: { $0.url == url }) { entries.append(SavedStack(url: url, name: Self.defaultName(url))) }
         select(url); save()
     }
-    /// Import account bookmarks without changing the selected window or its credentials.
+    /// Reconcile the complete account/device list, preserving names and live windows.
     func merge(_ rows: [[String: String]]) -> Bool {
         guard rows.count <= 128 else { return false }
         var additions: [SavedStack] = []
@@ -81,6 +81,8 @@ final class SavedStacks {
             else { return false }
             additions.append(SavedStack(url: url, name: name))
         }
+        let retained = Set(additions.map { $0.url })
+        for entry in entries where !retained.contains(entry.url) { remove(entry.url) }
         for entry in additions where !entries.contains(where: { $0.url == entry.url }) { entries.append(entry) }
         save(); return true
     }

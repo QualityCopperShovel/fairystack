@@ -1,6 +1,6 @@
-# FairyStack for Mac 1.17.0
+# FairyStack for Mac 1.17.1
 
-Text entry stays literal throughout the Mac app: search, messages, native dialogs and embedded pages have automatic spelling correction, text replacement, capitalization, punctuation substitution and predictive completion disabled. This changes only FairyStack’s preferences.
+Opening another person's FairyStack is a temporary visit. Account sync removes forgotten servers from this Mac’s saved list and prevents stale devices from importing them again.
 
 Version 1.10 records content-free crash and capture evidence. The signed-in
 workspace relays macOS crash type, app image UUID/offsets, WebKit process exits,

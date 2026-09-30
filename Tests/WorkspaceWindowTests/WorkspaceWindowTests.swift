@@ -377,7 +377,7 @@ final class ApprovalPopupTests: XCTestCase {
         parent.configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
         let loaded = expectation(description: "server menu loaded")
         let waiter = LoadWaiter { loaded.fulfill() }; parent.navigationDelegate = waiter
-        parent.loadHTMLString("<textarea id='draft'>keep this draft</textarea><p id='evidence'>Selected evidence</p><a id='server' target='_blank' rel='noopener noreferrer' href='https://multi.fairystack.com/#fairystack_stacks=%5B%22https%3A%2F%2Fyou.fairystack.com%22%5D'>Multiplayer</a>", baseURL: origin)
+        parent.loadHTMLString("<textarea id='draft'>keep this draft</textarea><p id='evidence'>Selected evidence</p><a id='server' target='_blank' rel='noopener noreferrer' href='https://borrowed.fairystack.com/#fairystack_stacks=%5B%22https%3A%2F%2Fyou.fairystack.com%22%5D'>Multiplayer</a>", baseURL: origin)
         wait(for: [loaded], timeout: 15); parent.navigationDelegate = windows
         defer {
             for window in NSApp.windows where window.contentView is WorkspaceWebView { window.close() }
@@ -390,11 +390,11 @@ final class ApprovalPopupTests: XCTestCase {
         js(parent, "window.stackReply=null; webkit.messageHandlers.fairystackStacks.postMessage({action:'open',origin:'https://you.fairystack.com'}).then(value=>window.stackReply=value); void 0")
         spin({ self.js(parent, "window.stackReply !== null") as? Bool == true })
         XCTAssertEqual(SavedStacks(defaults: defaults).windows.count, 1, "switching focuses the existing window")
-        let actions = ["server.click()", "window.open('https://multi.fairystack.com/?session=fixture', '_blank')", "location.href='https://workspace.example:8443/workspace/'"]
+        let actions = ["server.click()", "window.open('https://borrowed.fairystack.com/?session=fixture', '_blank')", "location.href='https://workspace.example:8443/workspace/'"]
         for (index, action) in actions.enumerated() {
             js(parent, action + "; void 0")
-            spin({ SavedStacks(defaults: defaults).windows.count == index + 2 })
-            let target = index == 2 ? custom : SavedStacks.defaultStack.url
+            let target = index == 2 ? custom : URL(string: "https://borrowed.fairystack.com")!
+            spin({ NSApp.windows.compactMap { $0.contentView as? WorkspaceWebView }.filter { $0.workspaceOrigin == target && $0.window?.isVisible == true }.count == (index == 1 ? 2 : 1) })
             let views = NSApp.windows.compactMap { $0.contentView as? WorkspaceWebView }.filter { $0.workspaceOrigin == target && $0.window?.isVisible == true }
             XCTAssertEqual(views.count, index == 1 ? 2 : 1, "each activation creates another window")
             for view in views {
@@ -406,7 +406,8 @@ final class ApprovalPopupTests: XCTestCase {
             XCTAssertEqual(parent.workspaceOrigin, origin)
             XCTAssertTrue(launched.isEmpty, "server links never reach the system browser")
         }
-        XCTAssertEqual(SavedStacks(defaults: defaults).windows.map(\.origin), [origin, SavedStacks.defaultStack.url, SavedStacks.defaultStack.url, custom])
+        XCTAssertEqual(SavedStacks(defaults: defaults).windows.map(\.origin), [origin, custom], "temporary visits are not restored as saved windows")
+        XCTAssertEqual(SavedStacks(defaults: defaults).entries.map(\.url), [origin, custom], "opening another person’s server never saves their address")
         XCTAssertEqual(windows.serverOrigin(URL(string: "https://new-server.fairystack.com/workspace/?app-launch=1")!), URL(string: "https://new-server.fairystack.com")!)
         for address in ["https://fairystack.com/", "https://www.fairystack.com/", "https://app.you.fairystack.com/", "https://multi.fairystack.com.evil.test/", "https://unknown.example/", "http://multi.fairystack.com/", "https://user@multi.fairystack.com/", "https://multi.fairystack.com:444/", "https://multi.fairystack.com/companions", "https://multi.fairystack.com/?focused=1", "https://multi.fairystack.com/?browser=1", WorkspaceAddress.trialOrigin.absoluteString] {
             XCTAssertNil(windows.serverOrigin(URL(string: address)!), address)
