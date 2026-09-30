@@ -14,6 +14,9 @@ final class SavedStacks {
     static let key = "savedFairyStacks.v1"
     static let selectedKey = "selectedFairyStack.v1"
     static let windowsKey = "fairyStackWindows.v1"
+    static let defaultSeededKey = "defaultStackSeeded.v1"
+    /// The shared multiplayer stack: the one stack every install starts with.
+    static let defaultStack = SavedStack(url: URL(string: "https://multi.fairystack.com")!, name: "Multiplayer")
     let defaults: UserDefaults
     private(set) var entries: [SavedStack] = []
     var selected: URL? {
@@ -32,7 +35,6 @@ final class SavedStacks {
     }
     static func permanent(_ url: URL) -> URL? {
         guard let canonical = WorkspaceAddress.parse(url.absoluteString), canonical.host != WorkspaceAddress.trialOrigin.host,
-              canonical.host != "multi.fairystack.com", canonical.host != "box-58f481f9aa62.fairystack.com",
               canonical.host != "fairystack.com", canonical.host != "www.fairystack.com" else { return nil }
         return canonical
     }
@@ -58,7 +60,12 @@ final class SavedStacks {
         if let previous { select(previous) }
         save()
     }
-
+    /// Adds the multiplayer stack once per install without changing the selection; forgetting it is permanent.
+    func seedDefault() {
+        guard !defaults.bool(forKey: Self.defaultSeededKey) else { return }
+        defaults.set(true, forKey: Self.defaultSeededKey)
+        if !entries.contains(where: { $0.url == Self.defaultStack.url }) { entries.append(Self.defaultStack); save() }
+    }
     func add(_ candidate: URL) {
         guard let url = Self.permanent(candidate) else { return }
         if !entries.contains(where: { $0.url == url }) { entries.append(SavedStack(url: url, name: Self.defaultName(url))) }

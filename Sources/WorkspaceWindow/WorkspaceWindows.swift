@@ -236,7 +236,7 @@ public final class WorkspaceWindows: NSObject, NSWindowDelegate, WKNavigationDel
     public func finishDiagnostics() { diagnostics.finish() }
     public func adopt(_ arguments: [String]) {
         diagnostics.start()
-        store.migrate(pairedOrigin: pairedOrigin())
+        store.migrate(pairedOrigin: pairedOrigin()); store.seedDefault()
         activateOnResume = arguments.contains("--fairystack-activate")
         if let index = arguments.firstIndex(of: "--fairystack-origin"), index + 1 < arguments.count,
            let url = WorkspaceAddress.parse(arguments[index + 1]), url.host != "fairystack.com" {

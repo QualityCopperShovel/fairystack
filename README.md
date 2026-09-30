@@ -1,4 +1,4 @@
-# FairyStack for Mac 1.15.0
+# FairyStack for Mac 1.17.0
 
 Text entry stays literal throughout the Mac app: search, messages, native dialogs and embedded pages have automatic spelling correction, text replacement, capitalization, punctuation substitution and predictive completion disabled. This changes only FairyStack’s preferences.
 
@@ -72,7 +72,7 @@ non-trial windows. Trial windows use temporary WebKit storage and never restore.
 
 The menu also offers Rename and Forget for the current stack. Forget removes its
 bookmark and restoration record while leaving its open windows and login intact.
-Fresh installations use private-account entry. Add your own FairyStack HTTPS address; no public workspace is seeded.
+Every install starts with one stack, **Multiplayer** (https://multi.fairystack.com), the
 shared stack whose members all see every session. It is added once without changing an
 existing selection; Forget removes it for good. **Add stack by address** is a recovery option. Existing single-address installations
 migrate automatically; an old command-paired origin is a one-time fallback when there
